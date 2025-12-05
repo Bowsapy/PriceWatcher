@@ -13,9 +13,8 @@ def GetOnlyPriceReg(text):
     return number
 
 def GetChromeDriver():
-    options = Options()
-    options.headless = True
     chrome_options = Options()
+    chrome_options.headless = True
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--no-sandbox")
@@ -23,16 +22,15 @@ def GetChromeDriver():
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.7444.163 Safari/537.36")
-    return options
+    return chrome_options
 
-def GetPriceFromHeureka():
+def GetPriceFromHeureka(urlLowest):
     price_index = 0
     driver = webdriver.Chrome(options=GetChromeDriver())
 
-    urls = ["https://pripravky-na-inkontinenci.heureka.cz/tena-lady-normal-24-ks/#prehled/?sort-filter=lowest_price"]
-    data = []  # sem budeme ukládat výsledky
+    data = []
 
-    driver.get(urls[0])
+    driver.get(urlLowest)
     try:
         WebDriverWait(driver, 15).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, ".c-offer__price.u-bold.u-delta"))
@@ -59,10 +57,9 @@ def GetPriceFromHeureka():
     driver.quit()
     return data
 
-def GetPriceFromEshopMedimat():
+def GetPriceFromEshopMedimat(url):
     driver = webdriver.Chrome(options=GetChromeDriver())
 
-    url = "https://eshop.medimat.cz/vlozky-tena-lady-normal-24-ks/"
     data = []
 
     driver.get(url)
@@ -89,5 +86,3 @@ def GetPriceFromEshopMedimat():
 
 
 
-if(GetPriceFromEshopMedimat()["Cena"]) > (GetPriceFromHeureka()[0]["Cena"]):
-    print("Kurva")
