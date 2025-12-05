@@ -1,52 +1,61 @@
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
+from RunProgram import *
 
-# Připojení k SQLite databázi
+# ---- Připojení k databázi ----
 conn = sqlite3.connect("urls.db")
 cursor = conn.cursor()
 
-# Vytvoření tabulky pokud neexistuje
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS urls (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    medimat_url TEXT NOT NULL,
-    heureka_url TEXT NOT NULL
-)
-""")
-conn.commit()
-
-# Funkce pro načtení všech URL z DB
+# ---- Načtení všech URL z databáze ----
 def load_urls():
-    cursor.execute("SELECT medimat_url, heureka_url FROM urls")
-    return cursor.fetchall()
+    cursor.execute("SELECT id, medimat_url, heureka_url FROM urls")
+    rows = cursor.fetchall()
 
-# Funkce pro přidání nové URL do DB
-def add_url_to_db(medimat_url, heureka_url):
-    cursor.execute("INSERT INTO urls (medimat_url, heureka_url) VALUES (?, ?)",
-                   (medimat_url, heureka_url))
+    # vrací slovník: {id: (medimat, heureka)}
+    return {row[0]: (row[1], row[2]) for row in rows}
+
+
+urls = load_urls()
+
+# ---- Uložení jedné dvojice URL do databáze ----
+def save_url(medimat, heureka):
+    cursor.execute(
+        "INSERT INTO urls (medimat_url, heureka_url) VALUES (?, ?)",
+        (medimat, heureka)
+    )
     conn.commit()
 
-# Funkce pro tlačítko "Přidat URL"
+
+# ---- Přidání URL z GUI ----
 def add_url():
     medimat = medimat_entry.get().strip()
     heureka = heureka_entry.get().strip()
+
     if medimat and heureka:
-        add_url_to_db(medimat, heureka)
-        messagebox.showinfo("Uloženo", "URL byly uloženy do databáze!")
+        save_url(medimat, heureka)
+
+        # znovu načíst data
+        global urls
+        urls = load_urls()
+
+        messagebox.showinfo("Uloženo", "URL byly uloženy!")
+
         medimat_entry.delete(0, tk.END)
         heureka_entry.delete(0, tk.END)
         update_list()
     else:
         messagebox.showwarning("Chyba", "Vyplňte obě pole!")
 
-# Funkce pro aktualizaci Listboxu
+
+# ---- Aktualizace ListBoxu ----
 def update_list():
     listbox.delete(0, tk.END)
-    for med, heu in load_urls():
-        listbox.insert(tk.END, f"{med} → {heu}")
+    for _id, (med, heu) in urls.items():
+        listbox.insert(tk.END, f"{med}  →  {heu}")
 
-# --- GUI ---
+
+# ---- GUI ----
 root = tk.Tk()
 root.title("URL Manager")
 
@@ -60,9 +69,14 @@ heureka_entry = tk.Entry(root, width=80)
 heureka_entry.grid(row=1, column=1)
 
 tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
+tk.Button(root, text="Spustit srovnání", command=UpdateAll).grid(row=2, column=2, pady=1)
+tk.Button(root, text="Smazat produkt podle ID", command=UpdateAll).grid(row=2, column=3, pady=1)
 
 listbox = tk.Listbox(root, width=120)
 listbox.grid(row=3, column=0, columnspan=2)
 
 update_list()
 root.mainloop()
+
+# ukončení spojení
+conn.close()
