@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 # ---- Připojení k DB ----
-conn = sqlite3.connect("urls.db")
+conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
 
 
@@ -40,7 +40,6 @@ def GetChromeDriver():
 # =============================
 
 def GetPriceFromHeureka(url, row_id):
-    """Stáhne nejnižší cenu z Heureky a uloží do DB."""
 
     driver = webdriver.Chrome(options=GetChromeDriver())
     cena_heureka = None
@@ -81,45 +80,6 @@ def GetPriceFromHeureka(url, row_id):
 
 
 
-# =============================
-#   Scraper: Medimat
-# =============================
-
-def GetPriceFromEshopMedimat(url, row_id):
-    """Stáhne cenu z Medimatu a uloží ji do DB."""
-
-    driver = webdriver.Chrome(options=GetChromeDriver())
-    cena = None
-    produkt = None
-
-    try:
-        driver.get(url)
-
-        # počkej na cenu
-        WebDriverWait(driver, 15).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div.col-xs-5.h4"))
-        )
-
-        # Název produktu
-        produkt = driver.find_element(By.CSS_SELECTOR, ".mt0").text
-
-        # Cena
-        price_elem = driver.find_element(By.CSS_SELECTOR, "div.col-xs-5.h4")
-        cena = int(GetOnlyPriceReg(price_elem.text))
-
-    except Exception as e:
-        print("Chyba Medimat:", e)
-
-    driver.quit()
-
-    # Uložení do DB
-    cursor.execute(
-        "UPDATE urls SET produkt = ?, cena_medimat = ? WHERE id = ?",
-        (produkt, cena, row_id)
-    )
-    conn.commit()
-
-    return produkt, cena
 
 
 
@@ -130,7 +90,6 @@ def GetPriceFromEshopMedimat(url, row_id):
 def UpdatePrices(row_id, medimat_url, heureka_url):
     print("➡ Zpracovávám produkt ID:", row_id)
 
-    produkt1, cena_m = GetPriceFromEshopMedimat(medimat_url, row_id)
     produkt2, cena_h = GetPriceFromHeureka(heureka_url, row_id)
 
     print("OK – hotovo")

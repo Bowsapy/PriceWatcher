@@ -1,53 +1,41 @@
 import sqlite3
 from openpyxl import Workbook
-from openpyxl.formatting.rule import CellIsRule
 from openpyxl.styles import PatternFill
 
 def ExportToExcel():
-    conn = sqlite3.connect("urls.db")
+    conn = sqlite3.connect("prices.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, medimat_url, heureka_url, produkt, cena_medimat, cena_heureka FROM urls")
+    cursor.execute(
+        "SELECT id, produkt, heureka_url, cena_heureka, moje_cena FROM urls"
+    )
     rows = cursor.fetchall()
 
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Ceny"
+    wb.remove(wb.active)  # smaže defaultní list
 
-    # záhlaví
-    ws.append([
-        "ID",
-        "Medimat URL",
-        "Heureka URL",
-        "Produkt",
-        "Cena Medimat (Kč)",
-        "Cena Heureka (Kč)"
-    ])
+    sheet_number = 1
 
-    # data
     for row in rows:
-        ws.append(row)
+        id_, produkt, heureka_url, cena_heureka, moje_cena = row
 
-    # ================================
-    # 🔥 PODMÍNĚNÉ FORMÁTOVÁNÍ
-    # ================================
+        ws = wb.create_sheet(title=str(sheet_number))
 
-    # Červené pozadí
-    red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
+        # Hlavička
+        ws.append(["Pole", "Hodnota"])
+        ws.append(["ID", id_])
+        ws.append(["Produkt", produkt])
+        ws.append(["Heureka URL", heureka_url])
+        ws.append(["Cena Heureka (Kč)", cena_heureka])
+        ws.append(["Moje cena", moje_cena])
 
-    # Svítí červeně, když Medimat > Heureka
-    ws.conditional_formatting.add(
-        "E2:E999",
-        CellIsRule(operator="greaterThan", formula=["F2"], fill=red_fill)
-    )
+        # Zvýraznění – moje cena > Heureka
+        if moje_cena and cena_heureka and moje_cena > cena_heureka:
+            ws["B6"].fill = PatternFill("solid", fgColor="FF9999")
 
-    # ================================
+        sheet_number += 1
 
-    wb.save("urls.xlsx")
-    print("Hotovo: jen buňky Medimatu jsou červené, když jsou dražší než Heureka.")
-
+    wb.save("produkty.xlsx")
     conn.close()
 
-
-if __name__ == "__main__":
-    ExportToExcel()
+    print("Hotovo – listy jsou pojmenované 1, 2, 3, …")
