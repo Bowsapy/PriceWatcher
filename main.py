@@ -18,9 +18,14 @@ cursor = conn.cursor()
 #   Utility funkce
 # =============================
 
+import re
+
+
 def GetOnlyPriceReg(text):
-    number = re.search(r"\d+", text).group()
-    return number
+    match = re.search(r"\d+(?:[ \u00A0]\d+)*", text)
+    if not match:
+        return None
+    return int(match.group().replace(" ", "").replace("\u00A0", ""))
 
 
 def GetChromeDriver():

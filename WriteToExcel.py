@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
@@ -10,8 +11,12 @@ def ExportToExcel():
 
     today_date = date.today().strftime("%d.%m.%Y")
 
+
     wb = Workbook()
-    wb.remove(wb.active)  # smažeme defaultní sheet
+    cursor.execute("SELECT * from urls")
+    products = cursor.fetchall()
+    if products:
+        wb.remove(wb.active)  # smažeme defaultní sheet
 
     header_fill = PatternFill("solid", fgColor="DDDDDD")
     header_font = Font(bold=True)
@@ -27,10 +32,42 @@ def ExportToExcel():
         SELECT id, produkt, heureka_url, moje_cena
         FROM urls
     """)
+
     products = cursor.fetchall()
+
     for id, produkt, heureka_url, moje_cena in products:
         sheet_name = f"{id} - {produkt[:25] if produkt else 'Produkt'}"
         ws = wb.create_sheet(title=sheet_name)
+
+        from openpyxl.chart import LineChart, Reference
+
+        # ws je worksheet s daty
+
+
+
+        chart = LineChart()
+        chart.title = "Historie cen"
+        chart.style = 1
+        chart.y_axis.title = "Cena"
+        chart.x_axis.title = "Datum"
+        cursor.execute("""
+             SELECT count(id)
+             FROM history
+         """)
+        count = cursor.fetchone()[0] + 4
+        # počítáme počet řádků s daty
+
+        # data pro osu Y (sloupec B od řádku 4)
+        data = Reference(ws, min_col=2, min_row=4, max_row=count, max_col=2)
+
+        # kategorie pro osu X (sloupec A od řádku 4)
+        cats = Reference(ws, min_col=1, min_row=4, max_row=count)
+
+        chart.add_data(data, titles_from_data=False)
+        chart.set_categories(cats)
+
+        # přidáme graf do sheetu (např. od sloupce D5)
+        ws.add_chart(chart, "D5")
 
         ws["A1"] = "Produkt:"
         ws["B1"] = produkt
@@ -67,6 +104,9 @@ def ExportToExcel():
             length = max(len(str(cell.value)) if cell.value else 0 for cell in column_cells)
             ws.column_dimensions[column_cells[0].column_letter].width = length + 2
 
-    wb.save(f"produkty.xlsx")
+
+
+    wb.save("produkty2.xlsx")
     conn.close()
+
 ExportToExcel()

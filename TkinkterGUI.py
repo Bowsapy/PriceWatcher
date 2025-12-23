@@ -4,6 +4,9 @@ from tkinter import messagebox
 import sqlite3
 from RunProgram import *
 from WriteToExcel import ExportToExcel
+import os
+from openpyxl.chart import LineChart, Reference
+
 
 # ---- Připojení k databázi ----
 conn = sqlite3.connect("prices.db")
@@ -22,6 +25,7 @@ urls = load_urls()
 def delete():
     cursor.execute("DELETE FROM urls")
     cursor.execute("DELETE FROM history")
+    os.remove("produkty.xlsx")
     conn.commit()
 # ---- Uložení jedné dvojice URL do databáze ----
 #delete()
