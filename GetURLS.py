@@ -1,17 +1,27 @@
+import os
 import sqlite3
 
-# připojení k databázi (souboru)
 conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
 
-# vytvoření tabulky pokud ještě neexistuje
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS urls (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    heureka_url TEXT NOT NULL,
-    produkt TEXT,
-    moje_cena INTEGER,
-    cena_heureka INTEGER
-)
-""")
+# DŮLEŽITÉ: povolit foreign keys v SQLite
+cursor.execute("PRAGMA foreign_keys = ON;")
+
+# tabulka history s FOREIGN KEY
+cursor.execute("SELECT * from urls")
+print(cursor.fetchall())
+
+
+conn = sqlite3.connect("prices.db")
+cursor = conn.cursor()
+
+print("Používaný soubor DB:")
+print(os.path.abspath("prices.db"))
+
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+print("Tabulky v DB:", cursor.fetchall())
+
+
+
 conn.commit()
+conn.close()

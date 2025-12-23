@@ -1,3 +1,4 @@
+import datetime as dt
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
@@ -18,14 +19,28 @@ def load_urls():
 
 
 urls = load_urls()
-
-# ---- Uložení jedné dvojice URL do databáze ----
-def save_url(price, heureka):
-    cursor.execute(
-        "INSERT INTO urls (moje_cena, heureka_url) VALUES (?, ?)",
-        (price, heureka)
-    )
+def delete():
+    cursor.execute("DELETE FROM urls")
+    cursor.execute("DELETE FROM history")
     conn.commit()
+# ---- Uložení jedné dvojice URL do databáze ----
+#delete()
+def save_url(price, heureka):
+    price = int(price)
+
+    cursor.execute(
+        "INSERT INTO urls (heureka_url,moje_cena) VALUES (?, ?)",
+        (heureka, price)
+    )
+    now = dt.datetime.now().isoformat(timespec="seconds")
+
+    conn.commit()
+def url_exists(heureka_url):
+    cursor.execute(
+        "SELECT 1 FROM urls WHERE heureka_url = ? LIMIT 1",
+        (heureka_url,)
+    )
+    return cursor.fetchone() is not None
 
 
 # ---- Přidání URL z GUI ----
@@ -33,20 +48,27 @@ def add_url():
     price = price_entry.get().strip()
     heureka = heureka_entry.get().strip()
 
-    if price and heureka:
-        save_url(price, heureka)
-
-        # znovu načíst data
-        global urls
-        urls = load_urls()
-
-        messagebox.showinfo("Uloženo", "URL byly uloženy!")
-
-        price_entry.delete(0, tk.END)
-        heureka_entry.delete(0, tk.END)
-        update_list()
-    else:
+    if not price or not heureka:
         messagebox.showwarning("Chyba", "Vyplňte obě pole!")
+        return
+
+    if url_exists(heureka):
+        messagebox.showwarning(
+            "Duplicitní odkaz",
+            "Tento Heureka odkaz už je v databázi!"
+        )
+        return
+
+    save_url(price, heureka)
+
+    global urls
+    urls = load_urls()
+
+    messagebox.showinfo("Uloženo", "URL byly uloženy!")
+
+    price_entry.delete(0, tk.END)
+    heureka_entry.delete(0, tk.END)
+    update_list()
 
 
 # ---- Aktualizace ListBoxu ----
@@ -77,7 +99,7 @@ heureka_entry.grid(row=1, column=1)
 
 tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
 tk.Button(root, text="Spustit srovnání", command=UpdateAll).grid(row=2, column=2, pady=1)
-tk.Button(root, text="Smazat produkt podle ID", command=delete_product).grid(row=2, column=3, pady=1)
+tk.Button(root, text="Smazat produkt podle ID", command=delete).grid(row=2, column=3, pady=1)
 
 listbox = tk.Listbox(root, width=120)
 listbox.grid(row=3, column=0, columnspan=2)

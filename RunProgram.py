@@ -20,7 +20,8 @@ def UpdateAll():
         print(f"   Heureka: {heureka_url}")
 
         try:
-            GetPriceFromHeureka(heureka_url, row_id)
+            GetPriceFromHeureka(heureka_url)
+            GetNameFromHeureka(heureka_url)
 
             print(f"   ✓ Hotovo — aktualizováno v DB")
         except Exception as e:

@@ -1,5 +1,7 @@
 import sqlite3
 import re
+from datetime import datetime
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -38,12 +40,10 @@ def GetChromeDriver():
 # =============================
 #   Scraper: Heureka
 # =============================
-
-def GetPriceFromHeureka(url, row_id):
-
+def GetNameFromHeureka(url):
     driver = webdriver.Chrome(options=GetChromeDriver())
     cena_heureka = None
-    produkt = None
+    product = None
 
     try:
         driver.get(url)
@@ -53,7 +53,51 @@ def GetPriceFromHeureka(url, row_id):
         )
 
         # Název produktu
-        produkt = driver.find_element(
+        product = driver.find_element(
+            By.CSS_SELECTOR,
+            ".e-heading.c-product-info__name.u-color-grey-700.u-bold.u-gamma"
+        ).text
+
+
+    except Exception as e:
+        print("Chyba Heureky:", e)
+
+    cursor.execute("SELECT id FROM urls WHERE heureka_url = ?", (url,))
+    row = cursor.fetchone()
+
+    if row:
+        # URL existuje → aktualizujeme název produktu
+        cursor.execute(
+            "UPDATE urls SET produkt = ? WHERE id = ?",
+            (product, row[0])
+        )
+    else:
+        # URL neexistuje → vložíme nový řádek
+        cursor.execute(
+            "INSERT INTO urls (heureka_url, produkt) VALUES (?, ?)",
+            (url, product)
+        )
+
+    conn.commit()
+
+    return product, cena_heureka
+
+
+def GetPriceFromHeureka(url):
+
+    driver = webdriver.Chrome(options=GetChromeDriver())
+    cena_heureka = None
+    product = None
+
+    try:
+        driver.get(url)
+
+        WebDriverWait(driver, 15).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ".c-offer__price.u-bold.u-delta"))
+        )
+
+        # Název produktu
+        product = driver.find_element(
             By.CSS_SELECTOR,
             ".e-heading.c-product-info__name.u-color-grey-700.u-bold.u-gamma"
         ).text
@@ -69,14 +113,23 @@ def GetPriceFromHeureka(url, row_id):
 
     driver.quit()
 
-    # Uložení do DB
     cursor.execute(
-        "UPDATE urls SET produkt = ?, cena_heureka = ? WHERE id = ?",
-        (produkt, cena_heureka, row_id)
-    )
+        "SELECT id FROM urls WHERE heureka_url = ?", (url,))
+    row = cursor.fetchone()
+    product_id = row[0] if row else None
+    # Uložení do DB
+    cursor.execute("""
+    INSERT INTO history (product_id, date, price)
+    VALUES (?, ?, ?)
+    """, (
+        product_id,
+        datetime.now().isoformat(timespec="seconds"),
+        cena_heureka
+    ))
+
     conn.commit()
 
-    return produkt, cena_heureka
+    return product, cena_heureka
 
 
 
