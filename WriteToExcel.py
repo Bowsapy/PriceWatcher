@@ -4,7 +4,6 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from datetime import date
 
-
 def ExportToExcel():
     conn = sqlite3.connect("prices.db")
     cursor = conn.cursor()
@@ -105,8 +104,9 @@ def ExportToExcel():
             ws.column_dimensions[column_cells[0].column_letter].width = length + 2
 
 
-
-    wb.save("produkty2.xlsx")
-    conn.close()
-
-ExportToExcel()
+        try:
+            wb.save("produkty.xlsx")
+            conn.close()
+            return True
+        except PermissionError:
+            return False

@@ -2,7 +2,7 @@ import datetime as dt
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
-from RunProgram import *
+from RunProgram import UpdateAll
 from WriteToExcel import ExportToExcel
 import os
 from openpyxl.chart import LineChart, Reference
@@ -11,7 +11,6 @@ from openpyxl.chart import LineChart, Reference
 # ---- Připojení k databázi ----
 conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
-ExportToExcel()
 # ---- Načtení všech URL z databáze ----
 def load_urls():
     cursor.execute("SELECT id, moje_cena, heureka_url, cena_heureka FROM urls")
@@ -20,6 +19,9 @@ def load_urls():
     # vrací slovník: {id: (medimat, heureka)}
     return {row[0]: (row[1], row[2]) for row in rows}
 
+def update_and_write():
+    UpdateAll()
+    check_()
 
 urls = load_urls()
 def delete():
@@ -87,6 +89,14 @@ def delete_product():
     conn.commit()
     conn.commit()  # potvrzení změn
 
+def notify_user(message):
+    messagebox.showwarning(message)
+def check_():
+    if ExportToExcel():
+        notify_user("OK")
+    else:
+        notify_user("Chyba")
+
 
 # ---- GUI ----
 root = tk.Tk()
@@ -102,7 +112,7 @@ heureka_entry = tk.Entry(root, width=80)
 heureka_entry.grid(row=1, column=1)
 
 tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
-tk.Button(root, text="Spustit srovnání", command=UpdateAll).grid(row=2, column=2, pady=1)
+tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2, column=2, pady=1)
 tk.Button(root, text="Smazat produkt podle ID", command=delete).grid(row=2, column=3, pady=1)
 
 listbox = tk.Listbox(root, width=120)
