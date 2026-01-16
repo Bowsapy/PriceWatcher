@@ -24,4 +24,3 @@ print("Tabulky v DB:", cursor.fetchall())
 
 
 conn.commit()
-conn.close()
