@@ -23,7 +23,6 @@ def ExportToExcel():
     headers = [
         "Datum",
         "Cena",
-        "Moje cena"
     ]
 
     # 1️⃣ Načteme všechny produkty
@@ -33,11 +32,10 @@ def ExportToExcel():
     """)
 
     products = cursor.fetchall()
-
     for id, produkt, heureka_url, moje_cena in products:
         sheet_name = f"{id} - {produkt[:25] if produkt else 'Produkt'}"
         ws = wb.create_sheet(title=sheet_name)
-
+        print(id)
         from openpyxl.chart import LineChart, Reference
 
         # ws je worksheet s daty
@@ -46,7 +44,7 @@ def ExportToExcel():
 
         chart = LineChart()
         chart.title = "Historie cen"
-        chart.style = 1
+        chart.style = 13
         chart.y_axis.title = "Cena"
         chart.x_axis.title = "Datum"
         cursor.execute("""
@@ -91,12 +89,12 @@ def ExportToExcel():
         """, (id,))
 
         history_rows = cursor.fetchall()
-
+        ws.cell(row=1, column=3).value = "Moje cena"
+        ws.cell(row=2, column=3).value = moje_cena
         # data
         for row_idx, (hist_date, price) in enumerate(history_rows, start=4):
             ws.cell(row=row_idx, column=1, value=hist_date)
             ws.cell(row=row_idx, column=2, value=price)
-            ws.cell(row=row_idx, column=3, value=moje_cena)
 
         # automatická šířka sloupců
         for column_cells in ws.columns:
@@ -104,9 +102,10 @@ def ExportToExcel():
             ws.column_dimensions[column_cells[0].column_letter].width = length + 2
 
 
-        try:
-            wb.save("produkty.xlsx")
-            conn.close()
-            return True
-        except PermissionError:
-            return False
+    try:
+        wb.save("produkty.xlsx")
+        conn.close()
+        return True
+    except PermissionError:
+        return False
+ExportToExcel()

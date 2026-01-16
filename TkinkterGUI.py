@@ -3,9 +3,18 @@ import tkinter as tk
 from tkinter import messagebox
 import sqlite3
 from RunProgram import UpdateAll
+from SendMail import send_price_alert
 from WriteToExcel import ExportToExcel
 import os
 from openpyxl.chart import LineChart, Reference
+import re
+
+def is_valid_heureka_url(url: str) -> bool:
+    heureka_regex = re.compile(
+        r"^https://[a-z0-9\-]+\.heureka\.cz/[a-z0-9\-]+/#prehled/(?:\?.*)?$",
+        re.IGNORECASE)
+
+    return bool(heureka_regex.match(url))
 
 
 # ---- Připojení k databázi ----
@@ -58,6 +67,11 @@ def add_url():
         messagebox.showwarning("Chyba", "Vyplňte obě pole!")
         return
 
+    if is_valid_heureka_url(heureka):
+        pass
+    else:
+        messagebox.showwarning("Neplatný odkaz")
+        return
     if url_exists(heureka):
         messagebox.showwarning(
             "Duplicitní odkaz",
@@ -96,7 +110,8 @@ def check_():
         notify_user("OK")
     else:
         notify_user("Chyba")
-
+    if mail_var .get() == 1:
+        send_price_alert()
 
 # ---- GUI ----
 root = tk.Tk()
@@ -114,6 +129,15 @@ heureka_entry.grid(row=1, column=1)
 tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
 tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2, column=2, pady=1)
 tk.Button(root, text="Smazat produkt podle ID", command=delete).grid(row=2, column=3, pady=1)
+
+mail_var = tk.IntVar()  # 0 = nezaškrtnuto, 1 = zaškrtnuto
+
+checkbox = tk.Checkbutton(
+    root,
+    text="Poslat mail pokud cena na heuréce se dostane pod mojí cenu",
+    variable=mail_var
+)
+checkbox.grid(row=2, column=4)
 
 listbox = tk.Listbox(root, width=120)
 listbox.grid(row=3, column=0, columnspan=2)

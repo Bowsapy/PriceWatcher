@@ -29,6 +29,18 @@ def UpdateAll():
 
     print("\nVšechny záznamy byly aktualizovány.")
 
+cursor.execute("delete from statistics")
+cursor.execute("""
+INSERT INTO STATISTICS (product_id)
+select id from urls
+""")
 
+cursor.execute("""UPDATE statistics
+SET min_price = (
+    SELECT MIN(price)
+    FROM history
+    WHERE history.product_id = statistics.product_id
+);"""
+)
 
-
+conn.commit()
