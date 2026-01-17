@@ -26,8 +26,18 @@ def CalculateAvgPrice():
     conn.commit()  # <--- musí být commit
 
 def CalculateActPrice():
-    pass
+    cursor.execute("""UPDATE STATISTICS
+                   SET act_price = (SELECT price FROM history
+                WHERE history.product_id = statistics.product_id
+                
+                ORDER BY date DESC
+                LIMIT 1)""")
+    conn.commit()
+
+
+
 CalculateAvgPrice()
 CalculateMinPrice()
 CalculateMaxPrice()
+CalculateActPrice()
 conn.close()

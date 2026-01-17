@@ -52,7 +52,6 @@ def ExportToExcel():
              FROM history
          """)
         count = cursor.fetchone()[0] + 4
-        # počítáme počet řádků s daty
 
         # data pro osu Y (sloupec B od řádku 4)
         data = Reference(ws, min_col=2, min_row=4, max_row=count, max_col=2)
@@ -76,9 +75,28 @@ def ExportToExcel():
         ws["A2"].font = Font(bold=True)
         # hlavičky
         for col, header in enumerate(headers, start=1):
-            cell = ws.cell(row=4, column=col, value=header)
+            cell = ws.cell(row=8, column=col, value=header)
             cell.fill = header_fill
             cell.font = header_font
+        cursor.execute("""SELECT min_price,max_price,avg_price,act_price from STATISTICS where product_id = ?""",(id,))
+
+        stats = cursor.fetchone()
+
+        if stats:
+            min_price, max_price, avg_price, act_price = stats
+        else:
+            min_price = max_price = avg_price = act_price = None
+        ws["D1"] = "Statistiky"
+        ws["D2"] = "Min cena"
+        ws["D3"] = "Max cena"
+        ws["D4"] = "Průměrná cena"
+        ws["D5"] = "Aktuální cena"
+
+        ws["E2"] = min_price
+        ws["E3"] = max_price
+        ws["E4"] = avg_price
+        ws["E5"] = act_price
+
 
         # 2️⃣ historie pro konkrétní produkt
         cursor.execute("""
@@ -92,7 +110,7 @@ def ExportToExcel():
         ws.cell(row=1, column=3).value = "Moje cena"
         ws.cell(row=2, column=3).value = moje_cena
         # data
-        for row_idx, (hist_date, price) in enumerate(history_rows, start=4):
+        for row_idx, (hist_date, price) in enumerate(history_rows, start=9):
             ws.cell(row=row_idx, column=1, value=hist_date)
             ws.cell(row=row_idx, column=2, value=price)
 

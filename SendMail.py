@@ -1,5 +1,6 @@
 import smtplib
 from email.message import EmailMessage
+password= "jfeg hvsl nijx mquh"
 
 def send_price_alert(to_email, product, price, target_price, url):
     msg = EmailMessage()
