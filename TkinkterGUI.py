@@ -8,7 +8,7 @@ from WriteToExcel import ExportToExcel
 import os
 from openpyxl.chart import LineChart, Reference
 import re
-
+from CalculateStats import FindOutIfPriceIsLower
 def is_valid_heureka_url(url: str) -> bool:
     heureka_regex = re.compile(
         r"^https://[a-z0-9\-]+\.heureka\.cz/[a-z0-9\-]+/#prehled/(?:\?.*)?$",
@@ -111,7 +111,17 @@ def check_():
     else:
         notify_user("Chyba")
     if mail_var .get() == 1:
-        send_price_alert()
+        prods = CheckIfPriceIsLower()
+        for prod in prods:
+            send_price_alert("janbouza5@seznam.cz",str(prod[0]),str(prod[3]),str(prod[1]),str(prod[2]))
+def CheckIfPriceIsLower():
+    cursor.execute("""
+    SELECT produkt, moje_cena, heureka_url, act_price FROM STATISTICS
+    join URLS ON URLS.id = statistics.product_id
+    WHERE price_is_lower = 1
+    """)
+    prods = cursor.fetchall()
+    return prods
 
 # ---- GUI ----
 root = tk.Tk()

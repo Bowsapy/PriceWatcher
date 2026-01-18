@@ -86,14 +86,9 @@ def GetNameFromHeureka(url):
     conn.commit()
 
     return product, cena_heureka
-def get_stat_terms():
-    cursor.execute(
-        "SELECT price FROM history WHERE heureka_url = ?",
-    )
 
-def check_if_price_islower():
-    pass
-    #cursor.execute("SELECT * from (SELECT * from urls join history on urls.id = history.product_id) where urls.moje_cena <= " )
+
+
 
 def GetPriceFromHeureka(url):
 

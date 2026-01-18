@@ -33,11 +33,22 @@ def CalculateActPrice():
                 ORDER BY date DESC
                 LIMIT 1)""")
     conn.commit()
-
+def FindOutIfPriceIsLower():
+    cursor.execute("""
+    UPDATE statistics
+    SET price_is_lower = EXISTS (
+        SELECT 1
+        FROM URLS
+        WHERE URLS.id = statistics.product_id
+          AND statistics.act_price <= URLS.moje_cena
+    )
+    """)
+    conn.commit()
 
 
 CalculateAvgPrice()
 CalculateMinPrice()
 CalculateMaxPrice()
 CalculateActPrice()
+FindOutIfPriceIsLower()
 conn.close()

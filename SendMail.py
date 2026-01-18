@@ -1,6 +1,14 @@
 import smtplib
 from email.message import EmailMessage
-password= "jfeg hvsl nijx mquh"
+from dotenv import load_dotenv
+import os
+
+load_dotenv("passwords.env")  # načte proměnné z .env
+
+EMAIL = os.getenv("EMAIL")
+password = os.getenv("PASSWORD")
+
+
 
 def send_price_alert(to_email, product, price, target_price, url):
     msg = EmailMessage()
@@ -21,7 +29,6 @@ Odkaz:
     )
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login("janbouza5@gmail.com", password)
+        smtp.login(EMAIL, password)
         smtp.send_message(msg)
 
-send_price_alert("janbouza5@seznam.cz","produkt","333","555","fsf")
