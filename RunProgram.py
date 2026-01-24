@@ -29,5 +29,3 @@ def UpdateAll():
 
     print("\nVšechny záznamy byly aktualizovány.")
 
-
-

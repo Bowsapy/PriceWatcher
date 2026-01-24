@@ -1,4 +1,5 @@
 import datetime as dt
+import email
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
@@ -8,6 +9,7 @@ from WriteToExcel import ExportToExcel
 import os
 from openpyxl.chart import LineChart, Reference
 import re
+from CalculateStats import *
 from CalculateStats import FindOutIfPriceIsLower
 def is_valid_heureka_url(url: str) -> bool:
     heureka_regex = re.compile(
@@ -18,9 +20,33 @@ def is_valid_heureka_url(url: str) -> bool:
 
 
 # ---- Připojení k databázi ----
+
 conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
 # ---- Načtení všech URL z databáze ----
+def save_user_email():
+    cursor.execute("SELECT * FROM USER_WITH_EMAIL")
+    users = cursor.fetchone()  # vezme první řádek, nebo None pokud nic není
+
+    if users:  # pokud už je alespoň jeden řádek
+        pass
+    else:
+        email = email_entry.get().strip()
+        cursor.execute("INSERT INTO USER_WITH_EMAIL (email) VALUES (?)", (email,))
+        conn.commit()  # nezapomeň uložit změny
+        email_label.config(text=email)
+
+def get_user_email():
+    cursor.execute("SELECT * FROM USER_WITH_EMAIL")
+    email = cursor.fetchone()
+    if email:
+        return cursor.fetchone()[1]
+    else:
+        return ""
+
+def change_email_label():
+    email_label.config(text=get_user_email())
+
 def load_urls():
     cursor.execute("SELECT id, moje_cena, heureka_url, cena_heureka FROM urls")
     rows = cursor.fetchall()
@@ -30,12 +56,27 @@ def load_urls():
 
 def update_and_write():
     UpdateAll()
+    CalculateAvgPrice()
+    CalculateMinPrice()
+    CalculateMaxPrice()
+    CalculateActPrice()
+    FindOutIfPriceIsLower()
+
+
     check_()
 
+
 urls = load_urls()
+
+def deleteEmail():
+    cursor.execute("DELETE FROM USER_WITH_EMAIL")
+    email_label.config(text="")
+    conn.commit()
+
 def delete():
     cursor.execute("DELETE FROM urls")
     cursor.execute("DELETE FROM history")
+    cursor.execute("DELETE FROM statistics")
     os.remove("produkty.xlsx")
     conn.commit()
 # ---- Uložení jedné dvojice URL do databáze ----
@@ -47,6 +88,13 @@ def save_url(price, heureka):
         "INSERT INTO urls (heureka_url,moje_cena) VALUES (?, ?)",
         (heureka, price)
     )
+    cursor.execute("""
+        INSERT INTO STATISTICS (product_id)
+        SELECT id
+        FROM urls
+    """)
+    conn.commit()
+
     now = dt.datetime.now().isoformat(timespec="seconds")
 
     conn.commit()
@@ -81,6 +129,7 @@ def add_url():
 
     save_url(price, heureka)
 
+
     global urls
     urls = load_urls()
 
@@ -112,8 +161,11 @@ def check_():
         notify_user("Chyba")
     if mail_var .get() == 1:
         prods = CheckIfPriceIsLower()
-        for prod in prods:
-            send_price_alert("janbouza5@seznam.cz",str(prod[0]),str(prod[3]),str(prod[1]),str(prod[2]))
+        email = get_user_email()
+        if email:
+            print("fsa")
+            for prod in prods:
+                send_price_alert(email,str(prod[0]),str(prod[3]),str(prod[1]),str(prod[2]))
 def CheckIfPriceIsLower():
     cursor.execute("""
     SELECT produkt, moje_cena, heureka_url, act_price FROM STATISTICS
@@ -122,6 +174,7 @@ def CheckIfPriceIsLower():
     """)
     prods = cursor.fetchall()
     return prods
+
 
 # ---- GUI ----
 root = tk.Tk()
@@ -138,7 +191,12 @@ heureka_entry.grid(row=1, column=1)
 
 tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
 tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2, column=2, pady=1)
-tk.Button(root, text="Smazat produkt podle ID", command=delete).grid(row=2, column=3, pady=1)
+tk.Button(root, text="Smazat vše", command=delete).grid(row=2, column=3, pady=1)
+tk.Button(root, text="Přidat Email", command=save_user_email).grid(row=3, column=3, pady=1)
+tk.Button(root, text="Smazat Email", command=deleteEmail).grid(row=3, column=4, pady=1)
+
+email_label = tk.Label(root, text="E-mail: ")
+email_label.grid(row=4, column=1)
 
 mail_var = tk.IntVar()  # 0 = nezaškrtnuto, 1 = zaškrtnuto
 
@@ -147,13 +205,17 @@ checkbox = tk.Checkbutton(
     text="Poslat mail pokud cena na heuréce se dostane pod mojí cenu",
     variable=mail_var
 )
+
+
 checkbox.grid(row=2, column=4)
+email_entry = tk.Entry(root, width=80)
+email_entry.grid(row=3, column=2)
 
 listbox = tk.Listbox(root, width=120)
 listbox.grid(row=3, column=0, columnspan=2)
 
+change_email_label()
 update_list()
 root.mainloop()
-
 # ukončení spojení
 conn.close()

@@ -46,9 +46,3 @@ def FindOutIfPriceIsLower():
     conn.commit()
 
 
-CalculateAvgPrice()
-CalculateMinPrice()
-CalculateMaxPrice()
-CalculateActPrice()
-FindOutIfPriceIsLower()
-conn.close()

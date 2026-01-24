@@ -14,9 +14,6 @@ conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
 
 
-# =============================
-#   Utility funkce
-# =============================
 
 import re
 

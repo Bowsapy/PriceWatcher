@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from traceback import print_tb
+
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from datetime import date
@@ -44,26 +46,28 @@ def ExportToExcel():
 
         chart = LineChart()
         chart.title = "Historie cen"
-        chart.style = 13
+        chart.style = 2
         chart.y_axis.title = "Cena"
         chart.x_axis.title = "Datum"
         cursor.execute("""
              SELECT count(id)
-             FROM history
-         """)
-        count = cursor.fetchone()[0] + 4
+             FROM history 
+             WHERE history.product_id = ?
+         """,(id,))
+        count = 8 + cursor.fetchone()[0]
+        print("count =" + str(count))
 
         # data pro osu Y (sloupec B od řádku 4)
-        data = Reference(ws, min_col=2, min_row=4, max_row=count, max_col=2)
+        data = Reference(ws, min_col=2, min_row=9, max_row=count, max_col=2)
 
         # kategorie pro osu X (sloupec A od řádku 4)
-        cats = Reference(ws, min_col=1, min_row=4, max_row=count)
+        cats = Reference(ws, min_col=1, min_row=9, max_row=count)
 
         chart.add_data(data, titles_from_data=False)
         chart.set_categories(cats)
 
         # přidáme graf do sheetu (např. od sloupce D5)
-        ws.add_chart(chart, "D5")
+        ws.add_chart(chart, "D7")
 
         ws["A1"] = "Produkt:"
         ws["B1"] = produkt
