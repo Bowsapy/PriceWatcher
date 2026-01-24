@@ -32,20 +32,30 @@ def save_user_email():
         pass
     else:
         email = email_entry.get().strip()
-        cursor.execute("INSERT INTO USER_WITH_EMAIL (email) VALUES (?)", (email,))
+        cursor.execute("INSERT INTO USER_WITH_EMAIL (email, send_bool) VALUES (?,?)", (email,0))
         conn.commit()  # nezapomeň uložit změny
         email_label.config(text=email)
 
 def get_user_email():
-    cursor.execute("SELECT * FROM USER_WITH_EMAIL")
+    cursor.execute("SELECT email FROM USER_WITH_EMAIL")
     email = cursor.fetchone()
     if email:
-        return cursor.fetchone()[1]
+        return email[0]
     else:
         return ""
+def get_send_bool():
+    cursor.execute("SELECT send_bool FROM USER_WITH_EMAIL")
+    row = cursor.fetchone()
+
+    if row is not None:
+        return row[0]
+    else:
+        return False
+
 
 def change_email_label():
     email_label.config(text=get_user_email())
+    send_bool_label.config(text=get_send_bool())
 
 def load_urls():
     cursor.execute("SELECT id, moje_cena, heureka_url, cena_heureka FROM urls")
@@ -159,7 +169,9 @@ def check_():
         notify_user("OK")
     else:
         notify_user("Chyba")
-    if mail_var .get() == 1:
+    cursor.execute("SELECT send_bool FROM USER_WITH_EMAIL")
+    send_bool = cursor.fetchone()[0]
+    if send_bool == 1:
         prods = CheckIfPriceIsLower()
         email = get_user_email()
         if email:
@@ -174,8 +186,19 @@ def CheckIfPriceIsLower():
     """)
     prods = cursor.fetchall()
     return prods
+def change_send_bool():
+    cursor.execute("""SELECT send_bool from USER_WITH_EMAIL""")
+    email = cursor.fetchone()
+    if email is not None:
+        send_bool = email[0]
+        print(send_bool)
 
-
+        if send_bool == 1:
+            send_bool = 0
+        else:
+            send_bool = 1
+        cursor.execute("""UPDATE USER_WITH_EMAIL set send_bool = ?""",(send_bool,))
+        conn.commit()
 # ---- GUI ----
 root = tk.Tk()
 root.title("URL Manager")
@@ -194,20 +217,13 @@ tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2,
 tk.Button(root, text="Smazat vše", command=delete).grid(row=2, column=3, pady=1)
 tk.Button(root, text="Přidat Email", command=save_user_email).grid(row=3, column=3, pady=1)
 tk.Button(root, text="Smazat Email", command=deleteEmail).grid(row=3, column=4, pady=1)
-
+tk.Button(root, text = "Zasílat email", command=change_send_bool).grid(row=2, column=4, pady=1)
 email_label = tk.Label(root, text="E-mail: ")
 email_label.grid(row=4, column=1)
-
-mail_var = tk.IntVar()  # 0 = nezaškrtnuto, 1 = zaškrtnuto
-
-checkbox = tk.Checkbutton(
-    root,
-    text="Poslat mail pokud cena na heuréce se dostane pod mojí cenu",
-    variable=mail_var
-)
+send_bool_label = tk.Label(root,text ="Nezasílat mail")
+send_bool_label.grid(row=5, column=1)
 
 
-checkbox.grid(row=2, column=4)
 email_entry = tk.Entry(root, width=80)
 email_entry.grid(row=3, column=2)
 

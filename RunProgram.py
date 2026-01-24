@@ -28,4 +28,4 @@ def UpdateAll():
             print(f"   ✗ Chyba při zpracování: {e}")
 
     print("\nVšechny záznamy byly aktualizovány.")
-
+conn.commit()
