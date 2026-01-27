@@ -5,7 +5,7 @@ from WriteToExcel import *
 
 
 
-def UpdateAll():
+def update_all():
     cursor.execute("SELECT id, moje_cena, heureka_url FROM urls")
     rows = cursor.fetchall()
 
@@ -20,8 +20,8 @@ def UpdateAll():
         print(f"   Heureka: {heureka_url}")
 
         try:
-            GetPriceFromHeureka(heureka_url)
-            GetNameFromHeureka(heureka_url)
+            get_price_from_heureka(heureka_url)
+            get_name_from_heureka(heureka_url)
 
             print(f"   ✓ Hotovo — aktualizováno v DB")
         except Exception as e:

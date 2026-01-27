@@ -3,9 +3,9 @@ import email
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
-from RunProgram import UpdateAll
+from RunProgram import update_all
 from SendMail import send_price_alert
-from WriteToExcel import ExportToExcel
+from WriteToExcel import export_to_excel
 import os
 from openpyxl.chart import LineChart, Reference
 import re
@@ -81,20 +81,18 @@ def load_urls():
     return {row[0]: (row[1], row[2]) for row in rows}
 
 def update_and_write():
-    UpdateAll()
+    update_all()
     CalculateAvgPrice()
     CalculateMinPrice()
     CalculateMaxPrice()
     CalculateActPrice()
     FindOutIfPriceIsLower()
-
-
     check_()
 
 
 urls = load_urls()
 
-def deleteEmail():
+def delete_email():
     cursor.execute("DELETE FROM USER_WITH_EMAIL")
     email_label.config(text="")
     conn.commit()
@@ -181,7 +179,7 @@ def delete_product():
 def notify_user(message):
     messagebox.showwarning(message)
 def check_():
-    if ExportToExcel():
+    if export_to_excel():
         notify_user("OK")
     else:
         notify_user("Chyba")
@@ -194,7 +192,6 @@ def check_():
         prods = check_if_price_is_lower()
         email = get_user_email()
         if email:
-            print("fsa")
             for prod in prods:
                 send_price_alert(email,str(prod[0]),str(prod[3]),str(prod[1]),str(prod[2]))
 def check_if_price_is_lower():
@@ -237,7 +234,7 @@ tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=
 tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2, column=2, pady=1)
 tk.Button(root, text="Smazat vše", command=delete).grid(row=2, column=3, pady=1)
 tk.Button(root, text="Přidat Email", command=save_user_email).grid(row=3, column=3, pady=1)
-tk.Button(root, text="Smazat Email", command=deleteEmail).grid(row=3, column=4, pady=1)
+tk.Button(root, text="Smazat Email", command=delete_email).grid(row=3, column=4, pady=1)
 tk.Button(root, text = "Zasílat email", command=change_send_bool).grid(row=2, column=4, pady=1)
 email_label = tk.Label(root, text="E-mail: ")
 email_label.grid(row=4, column=1)
@@ -254,5 +251,5 @@ listbox.grid(row=3, column=0, columnspan=2)
 change_email_label()
 update_list()
 root.mainloop()
-# ukončení spojení
+
 conn.close()

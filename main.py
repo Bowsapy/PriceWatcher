@@ -18,14 +18,14 @@ cursor = conn.cursor()
 import re
 
 
-def GetOnlyPriceReg(text):
+def get_only_price_reg(text):
     match = re.search(r"\d+(?:[ \u00A0]\d+)*", text)
     if not match:
         return None
     return int(match.group().replace(" ", "").replace("\u00A0", ""))
 
 
-def GetChromeDriver():
+def get_chrome_driver():
     chrome_options = Options()
     chrome_options.headless = True
     chrome_options.add_argument("--headless")
@@ -42,8 +42,8 @@ def GetChromeDriver():
 # =============================
 #   Scraper: Heureka
 # =============================
-def GetNameFromHeureka(url):
-    driver = webdriver.Chrome(options=GetChromeDriver())
+def get_name_from_heureka(url):
+    driver = webdriver.Chrome(options=get_chrome_driver())
     cena_heureka = None
     product = None
 
@@ -87,9 +87,9 @@ def GetNameFromHeureka(url):
 
 
 
-def GetPriceFromHeureka(url):
+def get_price_from_heureka(url):
 
-    driver = webdriver.Chrome(options=GetChromeDriver())
+    driver = webdriver.Chrome(options=get_chrome_driver())
     cena_heureka = None
     product = None
 
@@ -110,7 +110,7 @@ def GetPriceFromHeureka(url):
         price_elem = driver.find_element(By.CSS_SELECTOR, ".c-offer__price.u-bold.u-delta")
         price = price_elem.text.replace("\u00a0", " ")
 
-        cena_heureka = int(GetOnlyPriceReg(price))
+        cena_heureka = int(get_only_price_reg(price))
 
     except Exception as e:
         print("Chyba Heureky:", e)
@@ -144,9 +144,9 @@ def GetPriceFromHeureka(url):
 #   Hlavní funkce pro celý záznam
 # =============================
 
-def UpdatePrices(row_id, medimat_url, heureka_url):
+def update_prices(row_id, medimat_url, heureka_url):
     print("➡ Zpracovávám produkt ID:", row_id)
 
-    produkt2, cena_h = GetPriceFromHeureka(heureka_url, row_id)
+    produkt2, cena_h = get_price_from_heureka(heureka_url, row_id)
 
     print("OK – hotovo")
