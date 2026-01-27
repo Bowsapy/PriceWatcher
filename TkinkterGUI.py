@@ -186,7 +186,10 @@ def check_():
     else:
         notify_user("Chyba")
     cursor.execute("SELECT send_bool FROM USER_WITH_EMAIL")
-    send_bool = cursor.fetchone()[0]
+    row = cursor.fetchone()
+    if row is None:
+        return False
+    send_bool = row[0]
     if send_bool == 1:
         prods = check_if_price_is_lower()
         email = get_user_email()
