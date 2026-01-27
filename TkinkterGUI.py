@@ -17,13 +17,24 @@ def is_valid_heureka_url(url: str) -> bool:
         re.IGNORECASE)
 
     return bool(heureka_regex.match(url))
-
+def is_valid_email(email: str) -> bool:
+    EMAIL_REGEX = re.compile(
+        r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    )
+    return bool(EMAIL_REGEX.match(email))
 
 # ---- Připojení k databázi ----
 
 conn = sqlite3.connect("prices.db")
 cursor = conn.cursor()
 # ---- Načtení všech URL z databáze ----
+def change_send_bool_label():
+    if (get_send_bool()==1):
+        send_bool_label.config(text = "Zasílat")
+    else:
+        send_bool_label.config(text = "Nezasílat")
+
+
 def save_user_email():
     cursor.execute("SELECT * FROM USER_WITH_EMAIL")
     users = cursor.fetchone()  # vezme první řádek, nebo None pokud nic není
@@ -31,10 +42,14 @@ def save_user_email():
     if users:  # pokud už je alespoň jeden řádek
         pass
     else:
-        email = email_entry.get().strip()
-        cursor.execute("INSERT INTO USER_WITH_EMAIL (email, send_bool) VALUES (?,?)", (email,0))
-        conn.commit()  # nezapomeň uložit změny
-        email_label.config(text=email)
+            email = email_entry.get().strip()
+            if is_valid_email(email):
+
+                cursor.execute("INSERT INTO USER_WITH_EMAIL (email, send_bool) VALUES (?,?)", (email,0))
+                conn.commit()  # nezapomeň uložit změny
+                email_label.config(text=email)
+            else:
+                pass
 
 def get_user_email():
     cursor.execute("SELECT email FROM USER_WITH_EMAIL")
@@ -43,6 +58,7 @@ def get_user_email():
         return email[0]
     else:
         return ""
+
 def get_send_bool():
     cursor.execute("SELECT send_bool FROM USER_WITH_EMAIL")
     row = cursor.fetchone()
@@ -55,7 +71,7 @@ def get_send_bool():
 
 def change_email_label():
     email_label.config(text=get_user_email())
-    send_bool_label.config(text=get_send_bool())
+    change_send_bool_label()
 
 def load_urls():
     cursor.execute("SELECT id, moje_cena, heureka_url, cena_heureka FROM urls")
@@ -172,13 +188,13 @@ def check_():
     cursor.execute("SELECT send_bool FROM USER_WITH_EMAIL")
     send_bool = cursor.fetchone()[0]
     if send_bool == 1:
-        prods = CheckIfPriceIsLower()
+        prods = check_if_price_is_lower()
         email = get_user_email()
         if email:
             print("fsa")
             for prod in prods:
                 send_price_alert(email,str(prod[0]),str(prod[3]),str(prod[1]),str(prod[2]))
-def CheckIfPriceIsLower():
+def check_if_price_is_lower():
     cursor.execute("""
     SELECT produkt, moje_cena, heureka_url, act_price FROM STATISTICS
     join URLS ON URLS.id = statistics.product_id
@@ -199,6 +215,8 @@ def change_send_bool():
             send_bool = 1
         cursor.execute("""UPDATE USER_WITH_EMAIL set send_bool = ?""",(send_bool,))
         conn.commit()
+        change_send_bool_label()
+
 # ---- GUI ----
 root = tk.Tk()
 root.title("URL Manager")
@@ -212,7 +230,7 @@ price_entry.grid(row=0, column=1)
 heureka_entry = tk.Entry(root, width=80)
 heureka_entry.grid(row=1, column=1)
 
-tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=5)
+tk.Button(root, text="Přidat URL", command=add_url).grid(row=2, column=1, pady=1)
 tk.Button(root, text="Spustit srovnání", command=update_and_write).grid(row=2, column=2, pady=1)
 tk.Button(root, text="Smazat vše", command=delete).grid(row=2, column=3, pady=1)
 tk.Button(root, text="Přidat Email", command=save_user_email).grid(row=3, column=3, pady=1)
@@ -224,7 +242,7 @@ send_bool_label = tk.Label(root,text ="Nezasílat mail")
 send_bool_label.grid(row=5, column=1)
 
 
-email_entry = tk.Entry(root, width=80)
+email_entry = tk.Entry(root, width=20)
 email_entry.grid(row=3, column=2)
 
 listbox = tk.Listbox(root, width=120)
